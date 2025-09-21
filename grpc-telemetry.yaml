@@ -1,0 +1,48 @@
+username: admin
+password: admin
+insecure: true
+
+targets:
+  S1:
+    address: 10.0.0.2:6030
+  S2:
+    address: 10.0.0.3:6030
+  R1:
+    address: 10.0.0.4:6030
+  R2:
+    address: 10.0.0.5:6030
+  S3:
+    address: 10.0.0.6:6030
+  S4:
+    address: 10.0.0.7:6030
+  R3:
+    address: 10.0.0.8:6030
+  R4:
+    address: 10.0.0.9:6030
+
+subscriptions:
+  Interface-status:
+    paths:
+      - interfaces/interface/state/oper-status
+    sample-interval: 10s
+
+  CPU-utilization:
+    paths:
+      - components/component/cpu
+    sample-interval: 10s
+
+outputs:
+  grpcfile:
+    type: file
+    filename: /home/student/arista-grpcdata.log
+
+  influxdb:
+    type: influxdb
+    url: http://localhost:8086
+    org: cu-boulder
+    bucket: ana-robocorp
+    token: cLzDz0ZTjU0UiKqBnzHIVW4rMwwqPdZw4bSezfHwxqnTtcOO8QYSCkBBsgdQD6FR_bdejNvcnAFbTXI03ksI3g==
+    override-timestamp: false
+    timestamp-precison: s
+    health-check-period: 10s
+
