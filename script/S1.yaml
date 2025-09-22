@@ -1,0 +1,68 @@
+hostname: S1
+
+users:
+  - username: admin
+    role: network-admin
+    secret: $6$foee2cEWSqPu5ev6$FJXlwx7DFR8BlppVbT5X3Er5AHpVSUp3nGTxVlPxjfSml9b0FvqlBnbrDKgveubIi52bdp/U4T2EgG1z6lqZw0
+
+logging:
+  trap_level: critical
+  host: 10.0.0.1
+  facility: local7
+  source_interface: Ethernet5
+
+snmp:
+  community: public
+  host: 10.0.0.1
+  version: 2c
+  traps:
+    - snmp link-down
+    - snmp link-up
+
+vlans:
+  - id: 10
+    name: Vlan-10
+  - id: 20
+    name: Vlan-20
+  - id: 30
+    name: Vlan-30
+
+interfaces:
+  Ethernet1:
+    mtu: 1500
+    mode: trunk
+    access_vlan: 10
+  Ethernet2:
+    access_vlan: 10
+  Ethernet3:
+    access_vlan: 20
+  Ethernet4:
+    mtu: 2000
+    mode: trunk
+    encapsulation_vlan: 10
+  Ethernet5:
+    switchport: false
+    ipv4: 10.0.0.2/24
+  Management0:
+    ipv4: 172.20.20.16/24
+    ipv6: 3fff:172:20:20::10/64
+
+mgmt_api:
+  http:
+    port: 50001
+    shutdown: false
+  gnmi:
+    default: true
+    openmgmt:
+      authorization: true
+    persistence: true
+  netconf:
+    default: true
+
+routing:
+  ipv4_static:
+    - prefix: 0.0.0.0/0
+      next_hop: 172.20.20.1
+  ipv6_static:
+    - prefix: ::/0
+      next_hop: 3fff:172:20:20::1

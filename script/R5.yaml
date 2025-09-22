@@ -1,0 +1,78 @@
+hostname: R5
+
+users:
+  - username: admin
+    role: network-admin
+    secret: $6$3s9a5MdJvoCxYGzP$cBWn2ijfcCOOukqWta.4f9M8DVw4l1eEyuqkd39/VZk4jDiRxbuiOVDDu/5X69rj05pnqjCm1Cw5sZgGT8.6A0
+
+mgmt_api:
+  http:
+    shutdown: false
+  gnmi: {}
+  netconf: {}
+
+interfaces:
+  Ethernet1:
+    switchport: false
+    ipv4: 192.168.0.1/30
+    ipv6: 2001:7::1/64
+  Ethernet2:
+    switchport: false
+    ipv4: 192.168.0.5/30
+    ipv6: 2001:6::1/64
+  Ethernet3:
+    switchport: false
+    ipv4: 8.8.8.7/24
+    ipv6: 8080:8080::1/64
+  Management0:
+    switchport: false
+    ipv4: 172.20.20.17/24
+    ipv6: 3fff:172:20:20::11/64
+
+ip_routing: true
+ipv6_routing: true
+
+static_routes_ipv4:
+  - prefix: 0.0.0.0/0
+    next_hop: 172.20.20.1
+  - prefix: 192.168.0.0/16
+    next_hop: 192.168.0.2
+  - prefix: 192.168.0.0/16
+    next_hop: 192.168.0.6
+
+static_routes_ipv6:
+  - prefix: ::/0
+    next_hop: 2001:6::2
+  - prefix: ::/0
+    next_hop: 2001:7::2
+  - prefix: ::/0
+    next_hop: 3fff:172:20:20::1
+  - prefix: 2001:ab10::/64
+    next_hop: 2001:6::2
+  - prefix: 2001:ab10::/64
+    next_hop: 2001:7::2
+  - prefix: 2001:ab20::/64
+    next_hop: 2001:6::2
+  - prefix: 2001:ab20::/64
+    next_hop: 2001:7::2
+  - prefix: 2001:ab30::/64
+    next_hop: 2001:6::2
+  - prefix: 2001:ab30::/64
+    next_hop: 2001:7::2
+
+bgp:
+  as: 555
+  neighbors:
+    - addr: 192.168.0.2
+      remote_as: 333
+    - addr: 192.168.0.6
+      remote_as: 444
+    - addr: 2001:6::2
+      remote_as: 444
+      af: ipv6
+    - addr: 2001:7::2
+      remote_as: 333
+      af: ipv6
+  networks:
+    - 8.8.8.0/24
+    - 8080:8080::/64

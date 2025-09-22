@@ -1,0 +1,74 @@
+hostname {{ hostname }}
+
+{% for user in users %}
+username {{ user.username }} role {{ user.role }} secret sha512 {{ user.secret }}
+{% endfor %}
+
+spanning-tree mode mstp
+
+{% if mgmt_api is defined %}
+{% if mgmt_api.http is defined %}
+management api http-commands
+   {% if mgmt_api.http.shutdown is defined and mgmt_api.http.shutdown %}shutdown{% else %}no shutdown{% endif %}
+!
+{% endif %}
+{% if mgmt_api.gnmi is defined %}
+management api gnmi
+   transport grpc default
+   {% if mgmt_api.gnmi.openmgmt is defined and mgmt_api.gnmi.openmgmt.authorization %}transport grpc openmgmt
+      authorization requests{% endif %}
+   {% if mgmt_api.gnmi.persistence is defined and mgmt_api.gnmi.persistence %}operation set persistence{% endif %}
+!
+{% endif %}
+{% if mgmt_api.netconf is defined %}
+management api netconf
+   transport ssh default
+!
+{% endif %}
+{% endif %}
+
+{% for iface, data in interfaces.items() %}
+interface {{ iface }}
+{% if data.switchport is defined and not data.switchport %}
+   no switchport
+{% endif %}
+{% if data.ipv4 is defined %}
+   ip address {{ data.ipv4 }}
+{% endif %}
+{% if data.ipv6 is defined %}
+   ipv6 address {{ data.ipv6 }}
+{% endif %}
+{% if data.ospf_area is defined %}
+   ipv6 ospf {{ data.ospf_process|default(1) }} area {{ data.ospf_area }}
+{% endif %}
+{% endfor %}
+
+ip routing
+ipv6 unicast-routing
+
+{% for route in static_routes_ipv4 %}
+ip route {{ route.prefix }} {{ route.next_hop }}
+{% endfor %}
+
+{% for route in static_routes_ipv6 %}
+ipv6 route {{ route.prefix }} {{ route.next_hop }}
+{% endfor %}
+
+{% if bgp is defined %}
+router bgp {{ bgp.as }}
+   {% if bgp.neighbors is defined %}
+   {% for nbr in bgp.neighbors %}
+   neighbor {{ nbr.addr }} remote-as {{ nbr.remote_as }}
+      {% if nbr.af is defined %}address-family {{ nbr.af }}
+         neighbor {{ nbr.addr }} activate
+      {% endif %}
+   {% endfor %}
+   {% endif %}
+   {% if bgp.networks is defined %}
+   {% for net in bgp.networks %}
+   network {{ net }}
+   {% endfor %}
+   {% endif %}
+{% endif %}
+
+

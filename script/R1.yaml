@@ -1,0 +1,119 @@
+hostname: R1
+
+vlans:
+  - id: 10
+    name: Vlan-10
+  - id: 20
+    name: Vlan-20
+
+mgmt_api:
+  http:
+    port: 50001
+    shutdown: false
+  gnmi:
+    openmgmt:
+      authorization: true
+    persistence: true
+  netconf: {}
+
+snmp:
+  community:
+    name: public
+    perm: rw
+  hosts:
+    - ip: 10.0.0.1
+      version: 2c
+      community: public
+  traps:
+    - ""
+    - ospf if-state-change
+    - ospfv3 if-state-change
+    - snmp link-down
+    - snmp link-up
+    - vrrp
+
+interfaces:
+  - name: Ethernet1
+    mtu: 2000
+    trunk: false
+  - name: Ethernet1.10
+    subif:
+      vlan: 10
+    ipv4: 192.168.10.1/24
+    dhcpv4_helper:
+      - 192.168.0.26
+      - 192.168.10.2
+    ipv6: 2001:ab10::1/64
+    dhcpv6_relay: 2001:ab10::2
+    vrrp:
+      - id: 10
+        family: ipv4
+        addr: 192.168.10.254
+      - id: 10
+        family: ipv6
+        addr: 2001:ab10::3
+  - name: Ethernet1.20
+    subif:
+      vlan: 20
+    ipv4: 192.168.20.1/24
+    dhcpv4_helper:
+      - 192.168.0.26
+      - 192.168.20.2
+    ipv6: 2001:ab20::1/64
+    dhcpv6_relay: 2001:ab20::2
+    vrrp:
+      - id: 20
+        family: ipv4
+        addr: 192.168.20.254
+      - id: 20
+        family: ipv6
+        addr: 2001:ab20::3
+  - name: Ethernet1.30
+    subif:
+      vlan: 30
+    ipv6: 2001:ab30::1/64
+    dhcpv6_relay: 2001:ab30::2
+    vrrp:
+      - id: 30
+        family: ipv6
+        addr: 2001:ab30::3
+  - name: Ethernet2
+    ipv4: 192.168.0.22/30
+    ipv6: 2001:1::1/64
+    ospf_area: 0.0.0.0
+  - name: Ethernet5
+    ipv4: 10.0.0.4/24
+  - name: Management0
+    ipv4: 172.20.20.18/24
+    ipv6: 3fff:172:20:20::12/64
+
+ip_routing: true
+ipv6_routing: true
+
+static_routes:
+  - dest: 0.0.0.0/0
+    nh: 172.20.20.1
+
+static_routes_ipv6:
+  - dest: ::/0
+    nh: 3fff:172:20:20::1
+
+ospf:
+  process_id: 1
+  rid: 1.1.1.1
+  redistribute:
+    - connected
+    - rip
+  redistribute_ipv6:
+    - connected
+  ipv4_networks:
+    - network: 192.168.0.20/30
+      area: 0.0.0.0
+  max_lsa: 12000
+
+rip:
+  networks:
+    - 192.168.10.0/24
+    - 192.168.20.0/24
+  redistribute:
+    - ospf

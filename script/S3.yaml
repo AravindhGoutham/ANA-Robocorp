@@ -1,0 +1,80 @@
+hostname: S3
+
+users:
+  - username: admin
+    role: network-admin
+    secret: $6$atiFOCTRlwxVNuSr$.6WRkys4BZ3Vs3qfN8UiI6ycfSQctNuAhg8UNiIPCAW7oNnPnOVQMyDDRQfK1Tj/Zu1z4VM84oPdhpbOkO6RE.
+
+snmp:
+  community:
+    name: public
+    perm: rw
+  hosts:
+    - ip: 10.0.0.1
+      version: 2c
+      community: public
+  traps:
+    - ospf if-state-change
+    - ospfv3 if-state-change
+    - snmp link-down
+    - snmp link-up
+
+mgmt_api:
+  http:
+    port: 50001
+    shutdown: false
+  gnmi:
+    openmgmt:
+      authorization: true
+    persistence: true
+  netconf: {}
+
+vlans: []
+
+interfaces:
+  Ethernet1:
+    switchport: false
+    ipv4: 192.168.0.21/30
+    ipv6: 2001:1::2/64
+    ospf_area: 0.0.0.0
+  Ethernet2:
+    switchport: false
+    ipv4: 192.168.0.17/30
+    ipv6: 2001:3::1/64
+    ospf_area: 0.0.0.0
+  Ethernet3:
+    switchport: false
+    ipv4: 192.168.0.10/30
+    ipv6: 2001:4::2/64
+    ospf_area: 0.0.0.0
+  Ethernet5:
+    switchport: false
+    ipv4: 10.0.0.6/24
+  Management0:
+    switchport: false
+    ipv4: 172.20.20.14/24
+    ipv6: 3fff:172:20:20::e/64
+
+ip_routing: true
+ipv6_routing: true
+
+static_routes:
+  - dest: 0.0.0.0/0
+    nh: 172.20.20.1
+
+static_routes_ipv6:
+  - dest: ::/0
+    nh: 3fff:172:20:20::1
+
+ospf:
+  process_id: 1
+  ipv4_networks:
+    - network: 192.168.0.8/30
+      area: 0.0.0.0
+    - network: 192.168.0.16/30
+      area: 0.0.0.0
+    - network: 192.168.0.20/30
+      area: 0.0.0.0
+  max_lsa: 12000
+  ipv6: true
+  rid: 30.30.30.30

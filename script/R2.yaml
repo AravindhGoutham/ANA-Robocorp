@@ -1,0 +1,130 @@
+hostname: R2
+
+vlans:
+  - id: 10
+    name: Vlan-10
+  - id: 20
+    name: Vlan-20
+
+dhcp:
+  subnets:
+    - network: 192.168.10.0/24
+      range: 192.168.10.3 192.168.10.253
+      gw: 192.168.10.254
+    - network: 192.168.20.0/24
+      range: 192.168.20.3 192.168.20.253
+      gw: 192.168.20.254
+    - network: 2001:ab10::/64
+      range: 2001:ab10::4 2001:ab10::ffff
+    - network: 2001:ab20::/64
+      range: 2001:ab20::4 2001:ab20::ffff
+    - network: 2001:ab30::/64
+      range: 2001:ab30::4 2001:ab30::ffff
+
+mgmt_api:
+  http:
+    port: 50001
+    shutdown: false
+  gnmi:
+    openmgmt:
+      authorization: true
+    persistence: true
+  netconf: {}
+
+snmp:
+  community:
+    name: public
+    perm: rw
+  hosts:
+    - ip: 10.0.0.1
+      version: 2c
+      community: public
+  traps:
+    - bgp
+    - ospf if-state-change
+    - ospfv3 if-state-change
+    - snmp link-down
+    - snmp link-up
+    - vrrp
+
+interfaces:
+  - name: Ethernet1
+    trunk: true
+  - name: Ethernet1.10
+    subif:
+      vlan: 10
+    ipv4: 192.168.10.2/24
+    dhcpv4: true
+    ipv6: 2001:ab10::2/64
+    dhcpv6: true
+    vrrp:
+      - id: 10
+        family: ipv4
+        addr: 192.168.10.254
+      - id: 10
+        family: ipv6
+        addr: 2001:ab10::3
+  - name: Ethernet1.20
+    subif:
+      vlan: 20
+    ipv4: 192.168.20.2/24
+    dhcpv4: true
+    ipv6: 2001:ab20::2/64
+    dhcpv6: true
+    vrrp:
+      - id: 10
+        family: ipv4
+        addr: 192.168.20.254
+      - id: 20
+        family: ipv6
+        addr: 2001:ab20::3
+  - name: Ethernet1.30
+    subif:
+      vlan: 30
+    ipv6: 2001:ab30::2/64
+    dhcpv6: true
+    vrrp:
+      - id: 30
+        family: ipv6
+        addr: 2001:ab30::3
+  - name: Ethernet2
+    ipv4: 192.168.0.26/30
+    dhcpv4: true
+    ipv6: 2001:2::1/64
+    ospf_area: 0.0.0.0
+  - name: Ethernet5
+    ipv4: 10.0.0.5/24
+  - name: Management0
+    ipv4: 172.20.20.11/24
+    ipv6: 3fff:172:20:20::b/64
+
+ip_routing: true
+ipv6_routing: true
+
+static_routes:
+  - dest: 0.0.0.0/0
+    nh: 172.20.20.1
+
+static_routes_ipv6:
+  - dest: ::/0
+    nh: 3fff:172:20:20::1
+
+ospf:
+  process_id: 1
+  rid: 2.2.2.2
+  redistribute:
+    - connected
+    - rip
+  redistribute_ipv6:
+    - connected
+  ipv4_networks:
+    - network: 192.168.0.24/30
+      area: 0.0.0.0
+  max_lsa: 12000
+
+rip:
+  networks:
+    - 192.168.10.0/24
+    - 192.168.20.0/24
+  redistribute:
+    - ospf
