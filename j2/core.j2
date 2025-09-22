@@ -1,0 +1,165 @@
+hostname {{ hostname }}
+!
+
+{% if vlans is defined %}
+{% for vlan in vlans %}
+vlan {{ vlan.id }}
+   name {{ vlan.name }}
+!
+{% endfor %}
+{% endif %}
+
+{% if dhcp is defined %}
+dhcp server
+{% for subnet in dhcp.subnets %}
+   subnet {{ subnet.network }}
+      {% if subnet.range is defined %}range {{ subnet.range }}{% endif %}
+
+      {% if subnet.gw is defined %}default-gateway {{ subnet.gw }}{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% if mgmt_api is defined %}
+{% if mgmt_api.http is defined %}
+management api http-commands
+   protocol http port {{ mgmt_api.http.port }}
+   {% if mgmt_api.http.shutdown is defined and mgmt_api.http.shutdown %}shutdown{% else %}no shutdown{% endif %}
+!
+{% endif %}
+
+{% if mgmt_api.gnmi is defined %}
+management api gnmi
+   transport grpc default
+   {% if mgmt_api.gnmi.openmgmt is defined %}
+   transport grpc openmgmt
+      {% if mgmt_api.gnmi.openmgmt.authorization is defined and mgmt_api.gnmi.openmgmt.authorization %}authorization requests{% endif %}
+   {% endif %}
+   {% if mgmt_api.gnmi.persistence is defined and mgmt_api.gnmi.persistence %}operation set persistence{% endif %}
+!
+{% endif %}
+
+{% if mgmt_api.netconf is defined %}
+management api netconf
+   transport ssh default
+!
+{% endif %}
+{% endif %}
+
+{% if snmp is defined %}
+snmp-server community {{ snmp.community.name }} {{ snmp.community.perm }}
+{% if snmp.hosts is defined %}
+{% for host in snmp.hosts %}
+snmp-server host {{ host.ip }} version {{ host.version }} {{ host.community }}
+{% endfor %}
+{% endif %}
+{% if snmp.traps is defined %}
+{% for trap in snmp.traps %}
+snmp-server enable traps {{ trap }}
+{% endfor %}
+{% endif %}
+!
+{% endif %}
+
+{% for iface in interfaces %}
+interface {{ iface.name }}
+   {% if iface.trunk is defined and iface.trunk %}
+   switchport mode trunk
+   no switchport
+   {% endif %}
+   {% if iface.subif is defined %}
+   encapsulation dot1q vlan {{ iface.subif.vlan }}
+   {% endif %}
+   {% if iface.ipv4 is defined %}
+   ip address {{ iface.ipv4 }}
+   {% endif %}
+   {% if iface.dhcpv4 is defined and iface.dhcpv4 %}
+   dhcp server ipv4
+   {% endif %}
+   {% if iface.dhcpv4_helper is defined %}
+   {% for helper in iface.dhcpv4_helper %}
+   ip helper-address {{ helper }}
+   {% endfor %}
+   {% endif %}
+   {% if iface.ipv6 is defined %}
+   ipv6 address {{ iface.ipv6 }}
+   {% endif %}
+   {% if iface.dhcpv6 is defined and iface.dhcpv6 %}
+   dhcp server ipv6
+   {% endif %}
+   {% if iface.dhcpv6_relay is defined %}
+   ipv6 dhcp relay destination {{ iface.dhcpv6_relay }}
+   {% endif %}
+   {% if iface.vrrp is defined %}
+      {% for vr in iface.vrrp %}
+   vrrp {{ vr.id }} {{ vr.family }} {{ vr.addr }}
+      {% endfor %}
+   {% endif %}
+   no shutdown
+!
+{% endfor %}
+
+{% if ip_routing is defined and ip_routing %}ip routing{% endif %}
+{% if ipv6_routing is defined and ipv6_routing %}ipv6 unicast-routing{% endif %}
+
+{% if static_routes is defined %}
+{% for route in static_routes %}
+ip route {{ route.dest }} {{ route.nh }}
+{% endfor %}
+{% for route in static_routes_ipv6 %}
+ipv6 route {{ route.dest }} {{ route.nh }}
+{% endfor %}
+{% endif %}
+
+{% if ospf is defined %}
+router ospf {{ ospf.process_id }}
+   {% if ospf.redistribute is defined %}
+   {% for proto in ospf.redistribute %}
+   redistribute {{ proto }}
+   {% endfor %}
+   {% endif %}
+   {% if ospf.ipv4_networks is defined %}
+   {% for net in ospf.ipv4_networks %}
+   network {{ net.network }} area {{ net.area }}
+   {% endfor %}
+   {% endif %}
+   {% if ospf.max_lsa is defined %}max-lsa {{ ospf.max_lsa }}{% endif %}
+!
+{% if ospf.ipv6 is defined %}
+ipv6 router ospf {{ ospf.process_id }}
+   router-id {{ ospf.rid }}
+   {% if ospf.redistribute_ipv6 is defined %}
+   {% for proto in ospf.redistribute_ipv6 %}
+   redistribute {{ proto }}
+   {% endfor %}
+   {% endif %}
+{% endif %}
+{% endif %}
+
+{% if rip is defined %}
+router rip
+   {% if rip.networks is defined %}
+   {% for net in rip.networks %}
+   network {{ net }}
+   {% endfor %}
+   {% endif %}
+   {% if rip.redistribute is defined %}
+   {% for proto in rip.redistribute %}
+   redistribute {{ proto }}
+   {% endfor %}
+   {% endif %}
+   no shutdown
+!
+{% endif %}
+
+{% if bgp is defined %}
+router bgp {{ bgp.as }}
+   {% if bgp.neighbors is defined %}
+   {% for nbr in bgp.neighbors %}
+   neighbor {{ nbr.addr }} remote-as {{ nbr.remote_as }}
+      {% if nbr.af is defined %}address-family {{ nbr.af }}
+         neighbor {{ nbr.addr }} activate
+      {% endif %}
+   {% endfor %}
+   {% endif %}
+{% endif %}

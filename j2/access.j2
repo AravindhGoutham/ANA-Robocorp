@@ -1,0 +1,86 @@
+hostname {{ hostname }}
+
+{% for user in users %}
+username {{ user.username }} role {{ user.role }} secret sha512 {{ user.secret }}
+{% endfor %}
+
+logging trap {{ logging.trap_level }}
+logging host {{ logging.host }}
+logging facility {{ logging.facility }}
+logging source-interface {{ logging.source_interface }}
+
+snmp-server community {{ snmp.community }} rw
+snmp-server host {{ snmp.host }} version {{ snmp.version }} {{ snmp.community }}
+snmp-server enable traps
+{% for trap in snmp.traps %}
+snmp-server enable traps {{ trap }}
+{% endfor %}
+
+spanning-tree mode mstp
+
+{% for vlan in vlans %}
+vlan {{ vlan.id }}
+   name {{ vlan.name }}
+{% endfor %}
+
+{% for iface, data in interfaces.items() %}
+interface {{ iface }}
+{% if data.mtu is defined %}
+   mtu {{ data.mtu }}
+{% endif %}
+{% if data.switchport is defined and not data.switchport %}
+   no switchport
+{% else %}
+   {% if data.mode is defined %}
+   switchport mode {{ data.mode }}
+   {% endif %}
+   {% if data.access_vlan is defined %}
+   switchport access vlan {{ data.access_vlan }}
+   {% endif %}
+   {% if data.encapsulation_vlan is defined %}
+   encapsulation dot1q vlan {{ data.encapsulation_vlan }}
+   {% endif %}
+{% endif %}
+{% if data.ipv4 is defined %}
+   ip address {{ data.ipv4 }}
+{% endif %}
+{% if data.ipv6 is defined %}
+   ipv6 address {{ data.ipv6 }}
+{% endif %}
+{% endfor %}
+
+{% if mgmt_api is defined %}
+{% if mgmt_api.http is defined %}
+management api http-commands
+   protocol http port {{ mgmt_api.http.port }}
+   {% if mgmt_api.http.shutdown is defined and mgmt_api.http.shutdown %}shutdown{% else %}no shutdown{% endif %}
+!
+{% endif %}
+
+{% if mgmt_api.gnmi is defined %}
+management api gnmi
+   transport grpc default
+   {% if mgmt_api.gnmi.openmgmt is defined %}
+   transport grpc openmgmt
+      {% if mgmt_api.gnmi.openmgmt.authorization is defined and mgmt_api.gnmi.openmgmt.authorization %}authorization requests{% endif %}
+   {% endif %}
+   {% if mgmt_api.gnmi.persistence is defined and mgmt_api.gnmi.persistence %}operation set persistence{% endif %}
+!
+{% endif %}
+
+{% if mgmt_api.netconf is defined %}
+management api netconf
+   transport ssh default
+!
+{% endif %}
+{% endif %}
+
+no ip routing
+
+{% for route in routing.ipv4_static %}
+ip route {{ route.prefix }} {{ route.next_hop }}
+{% endfor %}
+
+{% for route in routing.ipv6_static %}
+ipv6 route {{ route.prefix }} {{ route.next_hop }}
+{% endfor %}
